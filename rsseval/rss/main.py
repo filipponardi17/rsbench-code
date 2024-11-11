@@ -1,6 +1,7 @@
 # This is the main module
 # It provides an overview of the program purpose and functionality.
 
+
 import sys, os
 import torch
 import argparse
@@ -20,7 +21,6 @@ from utils.checkpoint import save_model, create_load_ckpt
 
 from argparse import Namespace
 import wandb
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1" # disable GPU
 
 
 conf_path = os.getcwd() + "."
