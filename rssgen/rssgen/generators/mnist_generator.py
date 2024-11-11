@@ -1,3 +1,6 @@
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 from rssgen.generators.dataset_generator import GenericSyntheticDatasetGenerator
 from rssgen.generators.utils import get_exp
 from rssgen.utils import log

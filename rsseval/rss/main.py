@@ -20,6 +20,8 @@ from utils.checkpoint import save_model, create_load_ckpt
 
 from argparse import Namespace
 import wandb
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1" # disable GPU
+
 
 conf_path = os.getcwd() + "."
 sys.path.append(conf_path)
