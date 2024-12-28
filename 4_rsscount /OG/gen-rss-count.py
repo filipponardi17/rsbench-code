@@ -18,13 +18,13 @@ def _pp_solution(sol, nvars, nbits):
     
     Asol = np.zeros(shape=(nbits, nbits),
                     dtype=np.int16)
-    print("Asol")
-    print(Asol)
+    # print("Asol")
+    # print(Asol)
 
     Osol = np.zeros(shape=(nvars, nvars),
                     dtype=np.int16)
-    print("Osol")
-    print(Osol)
+    # print("Osol")
+    # print(Osol)
     for k in sol:
         if k.name == 'A' and sol[k]:
             Asol[k.indices] = 1

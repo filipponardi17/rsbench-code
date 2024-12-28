@@ -11,6 +11,8 @@ from sklearn.utils import check_random_state
 
 from pyeda.inter import exprvars, expr2dimacscnf
 from pyeda.inter import And, Or, Xor, Implies, OneHot, Equal
+#from countrss_module import Dataset
+#from pyeda.inter import Xor
 
 
 def _pp_solution(sol, nvars, nbits):
@@ -18,13 +20,13 @@ def _pp_solution(sol, nvars, nbits):
     
     Asol = np.zeros(shape=(nbits, nbits),
                     dtype=np.int16)
-    print("Asol")
-    print(Asol)
+    #print("Asol")
+    #print(Asol)
 
     Osol = np.zeros(shape=(nvars, nvars),
                     dtype=np.int16)
-    print("Osol")
-    print(Osol)
+    #print("Osol")
+    #print(Osol)
     for k in sol:
         if k.name == 'A' and sol[k]:
             Asol[k.indices] = 1
@@ -78,6 +80,45 @@ def _read_cnf(path):
     assert len(clauses) == n_clauses
 
     return n_variables, clauses
+
+# COPIA INCOLLA EZ
+def count_rss(dataset):
+    print(f"Building formula: {len(dataset.gvecs)} gvecs, {dataset.n_bits} bits")
+    print("len data gvecs", len(dataset.gvecs))
+    print("gvecs", dataset.gvecs)
+    A = exprvars("A", dataset.n_bits, dataset.n_bits)
+    O = exprvars("O", dataset.n_variables, dataset.n_variables)
+
+    formula = And(*[OneHot(*O[:, k]) for k in range(dataset.n_variables)])
+
+    nzb = lambda k1,k2 : Or(A[k1*2, k2*2], A[k1*2, k2*2 + 1],
+                            A[k1*2 + 1, k2*2], A[k1*2 + 1, k2*2 + 1])
+
+    formula &= And(*[Equal(O[k1, k2], nzb(k1, k2))
+                     for k1 in range(dataset.n_variables)
+                     for k2 in range(dataset.n_variables)])
+
+    formula &= And(*[OneHot(*A[:, i])
+                     for i in range(dataset.n_bits)])
+
+    formula &= dataset.encode_background(A)
+
+    for gvec, y in zip(dataset.gvecs, dataset.ys):
+        cvec = [_booldot(A[i, :], gvec).simplify()
+                for i in range(len(gvec))]
+        offset = 0
+        for vsize in dataset.domain_sizes:
+            formula &= OneHot(*cvec[offset:offset+vsize])
+            offset += vsize
+        formula &= dataset.k(cvec, y)
+
+    # Ora enumeriamo le soluzioni:
+    n_sol = 0
+    for sol in formula.satisfy_all():
+        _pp_solution(sol, dataset.n_variables, dataset.n_bits)
+        n_sol += 1
+    print(f"{n_sol} solutions for this task")
+    return n_sol
 
 
 class Dataset:
@@ -253,12 +294,37 @@ class XorDataset(Dataset):
 
     def encode_background(self, A):
         return True
+    
+
+class ConfigurableXOR(Dataset):
+    def __init__(self, n_variables, cnf_path="configurable_xor"):
+        super().__init__([2]*n_variables, cnf_path)
+        self.n_variables = n_variables
+
+    def make_data(self):
+        # passiamo dall'esterno con load_data()
+        pass
+
+    def load_data(self, gs, ys):
+        # gs e ys già pronti in one-hot
+        self.gvecs = gs
+        self.ys = ys
+
+    def k(self, cvec, y):
+        constraint = Xor(*[cvec[i] for i in range(1, len(cvec), 2)])
+        # print("constraint")
+        # print(constraint)
+        return constraint if y else ~constraint
+
+    def encode_background(self, A):
+        return True
 
 
 DATASETS = {
     "cnf": FileCNFDataset,
     "random": RandomCNFDataset,
     "xor": XorDataset,
+    "configurable_xor": ConfigurableXOR
 }
 
 
@@ -273,161 +339,3 @@ def _get_args_string(args):
         for name, value in fields
     ])
     return basename
-
-
-def main():
-    fmt_class = argparse.ArgumentDefaultsHelpFormatter
-    parser = argparse.ArgumentParser(formatter_class=fmt_class)
-    parser.add_argument(
-        "dataset", choices=sorted(DATASETS.keys()),
-        help="dataset to count RSs for"
-    )
-    parser.add_argument(
-        "-s", "--subsample", type=float, default=1.0,
-        help="fraction or number of observed gvecs to use (def. 1.0)"
-    )
-    parser.add_argument(
-        "-c", "--concept-sup", type=float, default=0,
-        help="fraction or number of gvecs with concept supervision (def. 0.0)"
-    )
-    parser.add_argument(
-        "-D", "--print-data", action="store_true",
-        help="print dataset prior to generating the CNF (def. False)",
-    )
-    parser.add_argument(
-        "--store-litmap", action="store_true",
-        help="Additionally stores the mapping DIMACS indices -> variable names (def. False)",
-    )
-    parser.add_argument(
-        "-E", "--enumerate", action="store_true",
-        help="enumerate solutions (def. False)",
-    )
-    parser.add_argument(
-        "-f", "--from-cnf", type=str, default=None,
-        help="cnf dataset: read CNF from this"
-    )
-    parser.add_argument(
-        "-n", "--n-variables", type=int, default=None,
-        help="random, xor: number of variables (bits)"
-    )
-    parser.add_argument(
-        "-m", "--n-clauses", type=int, default=None,
-        help="random: number of clauses"
-    )
-    parser.add_argument(
-        "-k", "--clause-length", type=int, default=None,
-        help="random: clause length"
-    )
-    parser.add_argument(
-        "--seed", type=int, default=1,
-        help="RNG seed"
-    )
-    args = parser.parse_args()
-
-    # generating the dataset/task
-    print("Creating dataset")
-    dataset = DATASETS[args.dataset](args)
-    dataset.make_data()
-
-    cnf_path = f"{dataset.cnf_path}__{_get_args_string(args)}.cnf"
-
-    # possibly subsample the labelled data
-    dataset.subsample(args.subsample, args.seed)
-
-    n_examples = len(dataset.gvecs)
-    n_csup = _prop_or_count(n_examples, args.concept_sup)
-    pi = check_random_state(args.seed).permutation(n_examples)
-    csup_mask = np.zeros(n_examples)
-    csup_mask[pi[:n_csup]] = 1
-
-    if args.print_data:
-        print(dataset.gvecs)
-        print(dataset.ys)
-
-    print(f"Building formula: {len(dataset.gvecs)} gvecs, {dataset.n_bits} bits")
-
-    # generating the formula encoding the RSs
-    A = exprvars("A", dataset.n_bits, dataset.n_bits)
-    # print("A")
-    # print(A)
-    O = exprvars("O", dataset.n_variables, dataset.n_variables)
-    # print("A")
-    # print(O)
-
-    # A encodes a function C* -> C
-    # each C* index is mapped into exactly one C index
-    # although multiple C* indices can be mapped to the same C index
-    # (i.e. no OneHot on O's rows)
-    formula = And(*[OneHot(*O[:, k])
-                    for k in range(dataset.n_variables)])
-
-    # nzb(k1, k2) = the (k1,k2)-block in A is NON ZERO
-    nzb = lambda k1,k2 : Or(A[k1*2, k2*2], A[k1*2, k2*2 + 1],
-                            A[k1*2 + 1, k2*2], A[k1*2 + 1, k2*2 + 1])
-
-    # zero-blocks A are zero and viceversa
-    formula &= And(*[Equal(O[k1, k2], nzb(k1, k2))
-                     for k1 in range(dataset.n_variables)
-                     for k2 in range(dataset.n_variables)])
-
-    formula &= And(*[OneHot(*A[:, i])
-                    for i in range(dataset.n_bits)])
-
-    # encode extra symbolic background
-    formula &= dataset.encode_background(A)
-
-
-
-    # force RSs to achieve perfect performance on data
-    for gvec, y, has_csup in zip(dataset.gvecs, dataset.ys, csup_mask):
-        cvec = [_booldot(A[i, :], gvec).simplify()
-                for i in range(len(gvec))]
-        "PRINTING CVEC TO CHECK"
-        print("gvec")
-        print(gvec)
-        print("cvec")
-        print(cvec)
-        # cvec2 = [A[i, :] for i in range(len(gvec))]
-        # print("cvec2")
-        # print(cvec2)
-
-
-        offset = 0
-        for vsize in dataset.domain_sizes:
-            formula &= OneHot(*cvec[offset:offset+vsize])
-            offset += vsize
-                       
-        formula &= dataset.k(cvec, y)
-        if has_csup:
-            for i in range(dataset.n_bits):
-                formula &= cvec[i] if gvec[i] else ~cvec[i]
-
-    # export the formula in DIMACS format
-    print("converting formula to CNF...")
-    litmap, cnf = expr2dimacscnf(formula.tseitin().to_cnf())
-
-    print(f"writing formula to {cnf_path}")
-    with open(cnf_path, "wt") as fp:
-        fp.write(str(cnf))
-
-    if args.store_litmap:
-        litmap = {
-            str(k): str(v) for k, v in litmap.items()
-            if type(k) is int and "A" in str(v)
-        }
-
-        with open(cnf_path + ".litmap", "wb") as fp:
-            pickle.dump(litmap, fp)
-
-    # WARNING: use the enumerate flag for small problems only!!
-    if args.enumerate:
-        n_sol = 0
-        for sol in formula.satisfy_all():
-            _pp_solution(sol, dataset.n_variables, dataset.n_bits)
-            n_sol += 1                
-            
-        print(f"{n_sol} solutions")
-
-
-if __name__ == "__main__":
-    main()

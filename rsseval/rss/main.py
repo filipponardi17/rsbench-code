@@ -11,9 +11,8 @@ import datetime
 
 from datasets import get_dataset
 from models import get_model
-from utils.train import train
+from utils.train_vero import train
 from utils.test import test
-from utils.preprocess_resnet import preprocess
 from utils.conf import *
 import signal
 from utils.args import *
@@ -203,7 +202,7 @@ def main(args):
         )
 
         # perform posthoc evaluation/ cl training/ joint training
-        print("    Chosen device:", model.device)
+        print("Chosen device:", model.device)
 
         if args.preprocess:
             preprocess(model, dataset, args)

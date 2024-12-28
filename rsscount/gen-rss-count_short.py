@@ -147,7 +147,7 @@ class CNFDataset(Dataset):
             [2 for _ in range(self.n_variables)],
             f"cnf_{basename}"
         )
-
+        
     def make_data(self):
         variables = exprvars("v", self.n_variables)
         formula = _bind(variables, self.clauses)
@@ -254,11 +254,65 @@ class XorDataset(Dataset):
     def encode_background(self, A):
         return True
 
+class ShortXorDataset(XorDataset):
+    """
+    Classe che genera un sottoinsieme del task XOR a 3 variabili,
+    considerando solo 4 task totali (8 combinazioni), divisi in 2 mondi ciascuno.
+    Ad esempio:
+    Task 1: input 0 e 1
+    Task 2: input 2 e 3
+    Task 3: input 4 e 5
+    Task 4: input 6 e 7
+    
+    Per la prima chiamata consideriamo Task 1 e Task 2 (i primi 4 input),
+    per la seconda chiamata potrai passare ai Task 3 e Task 4.
+    """
+    def __init__(self, args):
+        # Forziamo n_variables = 3 per XOR
+        args.n_variables = 3
+        super().__init__(args)
+
+    def make_data(self):
+        # Genera tutti i dati XOR come fa la XorDataset
+        super().make_data()
+        
+        # Ora self.gvecs e self.ys contengono 8 righe (2^3=8)
+        # con tutte le combinazioni di input (mondi)
+        # La codifica delle 8 combinazioni per XOR(3) è:
+        # Indici delle righe: da 0 a 7
+        # 0: 000 -> y=0
+        # 1: 001 -> y=1
+        # 2: 010 -> y=1
+        # 3: 011 -> y=0
+        # 4: 100 -> y=1
+        # 5: 101 -> y=0
+        # 6: 110 -> y=0
+        # 7: 111 -> y=1
+        
+        # Task 1 = righe [0,1]
+        # Task 2 = righe [2,3]
+        # Task 3 = righe [4,5]
+        # Task 4 = righe [6,7]
+        
+        # Prima chiamata: usiamo le prime due task, ovvero righe da 0 a 3
+        # self.gvecs = self.gvecs[0:4]
+        # self.ys = self.ys[0:4]
+        
+        # Se successivamente vorrai considerare le altre due task (3 e 4), 
+        # commenta le due righe sopra e decommenta le seguenti due righe:
+        # self.gvecs = self.gvecs[4:8]
+        # self.ys = self.ys[4:8]
+        
+        # Per ora lasciamo di default la prima chiamata:
+        self.gvecs = self.gvecs[0:4]
+        self.ys = self.ys[0:4]
+
 
 DATASETS = {
     "cnf": FileCNFDataset,
     "random": RandomCNFDataset,
     "xor": XorDataset,
+    "shortxor": ShortXorDataset,
 }
 
 

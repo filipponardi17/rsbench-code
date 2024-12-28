@@ -1,7 +1,7 @@
 # DPL loss module
 
 import torch
-from utils.normal_kl_divergence import kl_divergence
+#from utils.normal_kl_divergence import kl_divergence
 
 
 class ADDMNIST_DPL(torch.nn.Module):
