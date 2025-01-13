@@ -16,12 +16,12 @@ import csv  # Per salvare i risultati
 from countrss_module import ConfigurableXOR, count_rss
 # Se necessario, importate anche le altre funzioni come _pp_solution, _booldot
 
-def generate_xor_patterns_4vars():
+def generate_xor_patterns_3vars():
     """
     Genera TUTTI i 16 pattern dell'XOR a 4 variabili, 
     restituendo (gs_all, ys_all, gvecs_all).
     """
-    n_variables = 4
+    n_variables = 3
     gs_all = np.array(list(itertools.product([0,1], repeat=n_variables)))
     ys_all = np.array([reduce(lambda a,b: a^b, g, 0) for g in gs_all])
 
@@ -35,32 +35,28 @@ def generate_xor_patterns_4vars():
     
     return gs_all, ys_all, gvecs_all
 
-def define_containers_for_4_variables():
+def define_containers_for_3_variables():
     """
-    Definisce i 'contenitori' (hard-coded) per i 16 pattern delle 4 variabili.
+    Definisce i 'contenitori' (hard-coded) per i 8 pattern delle 4 variabili.
     Ogni contenitore è una lista di indici (pattern) da selezionare IN BLOCCO.
     
-    Esempio con 7 contenitori di grandezza 1,2,3,4,1,2,3:
+    Esempio con 5 contenitori di grandezza 1,2,2,1,2:
        - C0 -> [0]
        - C1 -> [1,2]
-       - C2 -> [3,4,5]
-       - C3 -> [6,7,8,9]
-       - C4 -> [10]
-       - C5 -> [11,12]
-       - C6 -> [13,14,15]
+       - C2 -> [3,4]
+       - C3 -> [5]      
+       - C4 -> [6,7]
     """
     containers = [
         [0],            # 1 pattern
         [1, 2],         # 2 pattern
-        [3, 4, 5],      # 3 pattern
-        [6, 7, 8, 9],   # 4 pattern
-        [10],           # 1 pattern
-        [11, 12],       # 2 pattern
-        [13, 14, 15]    # 3 pattern
+        [3, 4],         # 2 pattern
+        [5],             # 1 pattern
+        [6, 7]         # 2 pattern
     ]
     return containers
 
-def rss_count_for_subset(gvecs_subset, ys_subset, n_variables=4):
+def rss_count_for_subset(gvecs_subset, ys_subset, n_variables=3):
     """Ritorna il numero di RS per il subset di gvec specificati."""
     dataset = ConfigurableXOR(n_variables=n_variables)
     dataset.load_data(gvecs_subset, ys_subset)
@@ -81,9 +77,9 @@ def greedy_selection_containers(seed=0):
     np.random.seed(seed)
 
     # Carichiamo tutti i pattern XOR a 4 variabili
-    gs_all, ys_all, gvecs_all = generate_xor_patterns_4vars()
+    gs_all, ys_all, gvecs_all = generate_xor_patterns_3vars()
     # Definiamo i contenitori
-    containers = define_containers_for_4_variables()
+    containers = define_containers_for_3_variables()
 
     # Questi sono gli indici dei contenitori ancora selezionabili
     T = list(range(len(containers)))  # [0, 1, 2, 3, 4, 5, 6]
@@ -106,7 +102,7 @@ def greedy_selection_containers(seed=0):
             # Creiamo i subset corrispondenti
             gsubset = gvecs_all[new_indices]
             ysubset = ys_all[new_indices]
-            rs_val = rss_count_for_subset(gsubset, ysubset, n_variables=4)
+            rs_val = rss_count_for_subset(gsubset, ysubset, n_variables=3)
             
             # Verifichiamo se è il migliore (cioè se la RS si abbassa di più)
             if best_rs is None or rs_val < best_rs:
@@ -122,7 +118,7 @@ def greedy_selection_containers(seed=0):
         # Calcoliamo l'RS con l’insieme S_indices aggiornato
         gsubset = gvecs_all[S_indices]
         ysubset = ys_all[S_indices]
-        rs_val = rss_count_for_subset(gsubset, ysubset, n_variables=4)
+        rs_val = rss_count_for_subset(gsubset, ysubset, n_variables=3)
         rs_values.append(rs_val)
 
     return S, rs_values
@@ -141,12 +137,12 @@ def random_selection_containers(seed=0):
     np.random.seed(seed)
 
     # Carichiamo i 16 pattern dell'XOR a 4 variabili
-    gs_all, ys_all, gvecs_all = generate_xor_patterns_4vars()
+    gs_all, ys_all, gvecs_all = generate_xor_patterns_3vars()
     # Definiamo i contenitori
-    containers = define_containers_for_4_variables()
+    containers = define_containers_for_3_variables()
 
     # Indici dei contenitori ancora selezionabili
-    T = list(range(len(containers)))  # [0, 1, 2, 3, 4, 5, 6]
+    T = list(range(len(containers)))  # [0, 1, 2, 3, 4, 5]
     
     S = []          # contiene l'ordine in cui scegliamo i contenitori
     S_indices = []  # tutti i pattern selezionati finora
@@ -166,7 +162,7 @@ def random_selection_containers(seed=0):
         # Calcoliamo l'RS con la nuova S_indices
         gsubset = gvecs_all[S_indices]
         ysubset = ys_all[S_indices]
-        rs_val = rss_count_for_subset(gsubset, ysubset, n_variables=4)
+        rs_val = rss_count_for_subset(gsubset, ysubset, n_variables=3)
         rs_values.append(rs_val)
 
     return S, rs_values
