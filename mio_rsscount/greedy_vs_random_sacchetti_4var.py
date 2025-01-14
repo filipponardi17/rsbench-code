@@ -88,7 +88,7 @@ def greedy_selection_containers(seed=0):
     containers = define_containers_for_4_variables()
 
     # Questi sono gli indici dei contenitori ancora selezionabili
-    T = list(range(len(containers)))  # [0, 1, 2, 3, 4, 5, 6]
+    T = list(range(len(containers)))  # [0, 1, 2, 3, 4, 5, 6, 7 ]
 
     # S tiene traccia di quali contenitori abbiamo scelto (in ordine)
     S = []
