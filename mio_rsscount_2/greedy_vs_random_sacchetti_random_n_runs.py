@@ -137,7 +137,7 @@ def random_selection_containers(containers, gs_all, ys_all, gvecs_all, n_variabl
 if __name__ == "__main__":
     start_global = time.time()
 
-    n_variables = 4
+    n_variables = 5
     # Generiamo una volta tutti i pattern (gs_all, ys_all, gvecs_all).
     gs_all, ys_all, gvecs_all = generate_xor_patterns(n_variables)
 
