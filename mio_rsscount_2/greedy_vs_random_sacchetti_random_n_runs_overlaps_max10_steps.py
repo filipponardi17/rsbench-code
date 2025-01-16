@@ -124,7 +124,7 @@ if __name__ == "__main__":
         # Replichiamo ciascun contenitore 4 volte
         extended_containers = []
         for c in containers:
-            for _ in range(3):
+            for _ in range(10):
                 extended_containers.append(c)
         containers = extended_containers
         print(f"Numero di contenitori totali dopo la replica: {len(containers)}")
