@@ -212,11 +212,13 @@ class SyntheticMNISTGenerator(GenericSyntheticDatasetGenerator):
         log("info", f"Download completed.")
 
     def download_mnist_if_not_exists(self):
-        """Download all four MNIST files directly from the LeCun website"""
+        #"""Download all four MNIST files from an alternative reliable source if not already present."""
         if not os.path.exists(self.mnist_path):
             os.makedirs(self.mnist_path, exist_ok=True)
 
-            base_url = "http://yann.lecun.com/exdb/mnist/"
+            # Updated base URL to a GitHub repository or another reliable host
+            base_url = "https://storage.googleapis.com/cvdf-datasets/mnist/"
+        
             files = [
                 "train-images-idx3-ubyte.gz",
                 "train-labels-idx1-ubyte.gz",
@@ -229,11 +231,11 @@ class SyntheticMNISTGenerator(GenericSyntheticDatasetGenerator):
                 file_path = os.path.join(self.mnist_path, file)
                 self.download_file(file_url, file_path)
 
-            log("info", "Downloading MNIST dataset...")
+            log("info", "Downloading MNIST dataset from alternative source...")
 
             # Continue with the rest of the MNIST dataset download
             mndata = MNIST(self.mnist_path)
-            mndata.gz = True  # No need to use Gzip since files are decompressed
+            mndata.gz = True  # Files are still compressed
             mndata.load_training()
             mndata.load_testing()
 
