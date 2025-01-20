@@ -68,10 +68,20 @@ class XORDataset(torch.utils.data.Dataset):
 
             concepts = np.array(concept_values)
             self.concepts.append(concepts)
+#MODFIED HERE
+        # self.concepts = np.stack(self.concepts, axis=0)
+        # self.labels = np.stack(self.labels, axis=0)
+#WITH THIS
+        if self.concepts:  # Check if the list is not empty
+            self.concepts = np.stack(self.concepts, axis=0)
+        else:
+            print("Warning: No concept data available to stack.")
 
-        self.concepts = np.stack(self.concepts, axis=0)
-        self.labels = np.stack(self.labels, axis=0)
-        self.list_images = np.array(new_images)
+        if self.labels:  # Check if the list is not empty
+            self.labels = np.stack(self.labels, axis=0)
+        else:
+            print("Warning: No label data available to stack.")
+            self.list_images = np.array(new_images)
 
     def _extract_number(self, path):
         match = re.search(r"\d+", path)
