@@ -15,6 +15,7 @@ class IndividualMNISTCNN(nn.Module):
         x = F.max_pool2d(x, kernel_size=2, stride=2)
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, kernel_size=2, stride=2)
+        #print(f"x shape before view: {x.shape}")
         x = x.view(-1, 64 * 7 * 7)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)

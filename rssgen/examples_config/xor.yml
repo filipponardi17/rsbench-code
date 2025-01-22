@@ -1,17 +1,19 @@
-n_digits: 3
+n_digits: 4
 val_prop: 0.2
 test_prop: 0.3
 ood_prop: 0.3
 prop_in_distribution: 0.8
 combinations_in_distribution:
-  - "001"
-  - "010"
-  - "000"
+  - "0000"
+  - "0001"
+  - "0010"
+  - "0100"
 xor_rule: False
 symbols:
   - a
   - b
   - c
-logic: Or(And(a, b), Not(c))
+  - d
+logic: Or(And(a,b), And(c,d))
 use_mnist: True
 mnist_path: data/MNIST/raw

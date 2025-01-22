@@ -96,6 +96,9 @@ class XORDataset(torch.utils.data.Dataset):
 
         # grayscale
         image = image.convert("L")
+        
+    
+        #print("Shape dell' immagine (H, W):", (image.size[1], image.size[0]))
 
         return self.transform(image), labels, concepts
 
