@@ -5,9 +5,8 @@ ood_prop: 0.3
 prop_in_distribution: 0.8
 combinations_in_distribution:
   - "0000"
-  - "0001"
-  - "0010"
-  - "0100"
+  - "0101"
+  - "1110"
 xor_rule: False
 symbols:
   - a
