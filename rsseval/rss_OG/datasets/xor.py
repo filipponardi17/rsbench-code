@@ -1,9 +1,10 @@
+#gpt made
 from argparse import Namespace
 from datasets.utils.base_dataset import BaseDataset, XOR_get_loader
 from datasets.utils.xor_creation import XORDataset
 from backbones.cnnnosharing import CBMNoSharing, MNISTLCNN
 import time
-
+import numpy as np
 
 class MNLOGIC(BaseDataset):
     NAME = "xor"
@@ -21,7 +22,6 @@ class MNLOGIC(BaseDataset):
             c_sup=self.args.c_sup,
             which_c=self.args.which_c,
         )
-
         self.dataset_val = XORDataset(
             base_path="data/mnlogic",
             split="val",
@@ -35,8 +35,7 @@ class MNLOGIC(BaseDataset):
             split="ood",
         )
 
-        print(f"Loaded datasets in {time.time()-start} s.")
-
+        print(f"Loaded datasets in {time.time() - start} s.")
         print(
             "Len loaders: \n train:",
             len(self.dataset_train),
@@ -44,6 +43,11 @@ class MNLOGIC(BaseDataset):
             len(self.dataset_val),
         )
         print(" len test:", len(self.dataset_test))
+
+        # ======================================
+        # Filtraggio del train set per le combo desiderate
+        self.filtrate()
+        # ======================================
 
         keep_order = True if self.return_embeddings else False
         self.train_loader = XOR_get_loader(
@@ -81,3 +85,36 @@ class MNLOGIC(BaseDataset):
         print("Validation samples", len(self.dataset_val))
         print("Test samples", len(self.dataset_test))
         print("Test OOD samples", len(self.dataset_ood))
+
+    
+
+    def filtrate(self):
+        combos_to_keep = [
+            [0, 0, 0, 0],
+            [0, 1, 0, 1],
+            [1, 1, 1, 0]
+        ]
+
+        old_size = len(self.dataset_train.labels)
+        keep_mask = []
+
+        for i in range(old_size):
+            c_values = self.dataset_train.concepts[i]
+            c_int = c_values.astype(int).tolist()
+            keep_mask.append(c_int in combos_to_keep)
+
+        keep_mask = np.array(keep_mask, dtype=bool)
+
+        # Converte list_images in array NumPy (dtype=object se gli elementi sono stringhe di path)
+        arr_list_images = np.array(self.dataset_train.list_images, dtype=object)
+
+        # Applica la maschera booleana
+        arr_list_images = arr_list_images[keep_mask]
+        self.dataset_train.labels = self.dataset_train.labels[keep_mask]
+        self.dataset_train.concepts = self.dataset_train.concepts[keep_mask]
+
+        # Se vuoi rimanere con una lista Python per list_images:
+        self.dataset_train.list_images = arr_list_images.tolist()
+
+        new_size = len(self.dataset_train.labels)
+        print(f"Filtrate train set: mantenuti {new_size} campioni su {old_size} totali.")

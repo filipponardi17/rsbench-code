@@ -1,0 +1,31 @@
+n_digits: 4
+val_prop: 0.2
+test_prop: 0.3
+ood_prop: 0.01
+prop_in_distribution: 1.0
+combinations_in_distribution:
+- "0000"
+- "0001"
+- "0010"
+- "0011"
+- "0100"
+- "0101"
+- "0110"
+- "0111"
+- "1000"
+- "1001"
+- "1010"
+- "1011"
+- "1100"
+- "1101"
+- "1110"
+#- "1111"
+xor_rule: True
+symbols:
+  - a
+  - b
+  - c
+  - d
+logic: Or(And(a,b), And(c,d)) 
+use_mnist: True
+mnist_path: data/MNIST/raw
