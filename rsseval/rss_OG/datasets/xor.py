@@ -45,7 +45,7 @@ class MNLOGIC(BaseDataset):
         print(" len test:", len(self.dataset_test))
 
         # ======================================
-        # Filtraggio del train set per le combo desiderate
+        # Filtraggio del train set per i task selezionati
         self.filtrate()
         # ======================================
 
@@ -89,32 +89,24 @@ class MNLOGIC(BaseDataset):
     
 
     def filtrate(self):
+        # Define the combinations to keep
         combos_to_keep = [
             [0, 0, 0, 0],
             [0, 1, 0, 1],
             [1, 1, 1, 0]
         ]
 
-        old_size = len(self.dataset_train.labels)
-        keep_mask = []
+        # Create a mask for filtering based on `combos_to_keep`
+        keep_mask = np.array([
+            c.tolist() in combos_to_keep for c in self.dataset_train.concepts
+        ], dtype=bool)
 
-        for i in range(old_size):
-            c_values = self.dataset_train.concepts[i]
-            c_int = c_values.astype(int).tolist()
-            keep_mask.append(c_int in combos_to_keep)
-
-        keep_mask = np.array(keep_mask, dtype=bool)
-
-        # Converte list_images in array NumPy (dtype=object se gli elementi sono stringhe di path)
-        arr_list_images = np.array(self.dataset_train.list_images, dtype=object)
-
-        # Applica la maschera booleana
-        arr_list_images = arr_list_images[keep_mask]
+        # Apply the mask to filter the training dataset
         self.dataset_train.labels = self.dataset_train.labels[keep_mask]
         self.dataset_train.concepts = self.dataset_train.concepts[keep_mask]
+        self.dataset_train.list_images = np.array(self.dataset_train.list_images, dtype=object)[keep_mask].tolist()
 
-        # Se vuoi rimanere con una lista Python per list_images:
-        self.dataset_train.list_images = arr_list_images.tolist()
-
+        # Log the results
+        old_size = len(keep_mask)
         new_size = len(self.dataset_train.labels)
-        print(f"Filtrate train set: mantenuti {new_size} campioni su {old_size} totali.")
+        print(f"Filtrate train set: retained {new_size} samples out of {old_size} total.")

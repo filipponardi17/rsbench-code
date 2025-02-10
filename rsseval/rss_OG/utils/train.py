@@ -1,12 +1,11 @@
-# Module which contains the code for training a model
+#PER TRAIN
+
 import torch
 import numpy as np
-
 import wandb
 import csv
 import os
 from tqdm import tqdm
-
 from torchvision.utils import make_grid
 from utils.wandb_logger import *
 from utils.status import progress_bar
@@ -27,6 +26,27 @@ from warmup_scheduler import GradualWarmupScheduler
 from sklearn.metrics import multilabel_confusion_matrix, confusion_matrix
 import numpy as np
 
+
+
+# Funzione per salvare il valore di cf1 (F1 dei concetti) in un CSV
+
+def log_concept_f1(epoch, cf1, filename="concept_f1.csv"):
+    """
+    Salva (o aggiunge) una riga nel file CSV contenente l'epoca corrente
+    e il valore cf1 (F1 score dei concetti).
+
+    Args:
+        epoch (int): Epoca corrente.
+        cf1 (float): F1 score dei concetti.
+        filename (str): Nome del file CSV (default "concept_f1.csv").
+    """
+    file_exists = os.path.exists(filename)
+    with open(filename, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        # Se il file non esiste ancora, scrivi anche l'intestazione
+        if not file_exists:
+            writer.writerow(["Epoch", "Concept_F1"])
+        writer.writerow([epoch, cf1])
 
 def convert_to_categories(elements):
     # Convert vector of 0s and 1s to a single binary representation along the first dimension
@@ -519,6 +539,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             h_c = mean_entropy(p_cs_all, model.n_facts)
 
             fprint(f"Concepts:\n    ACC: {cac}, F1: {cf1}")
+            log_concept_f1(epoch, cf1)
             fprint(f"Labels:\n      ACC: {yac}, F1: {yf1}")
             fprint(f"Entropy:\n     H(C): {h_c}")
 
