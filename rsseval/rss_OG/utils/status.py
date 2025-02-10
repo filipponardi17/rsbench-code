@@ -73,6 +73,8 @@ def progress_bar(i: int, max_iter: int, epoch: Union[int, str], loss: float) -> 
         None: This function does not return a value.
     """
     # if not (i + 1) % 10 or (i + 1) == max_iter:
+    if max_iter <= 0:
+        max_iter = 1
     progress = min(float((i + 1) / max_iter), 1)
     progress_bar = ("█" * int(50 * progress)) + ("┈" * (50 - int(50 * progress)))
     print(

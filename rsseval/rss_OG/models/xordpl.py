@@ -7,6 +7,8 @@ from models.utils.utils_problog import *
 from utils.losses import XOR_Cumulative
 from utils.dpl_loss import XOR_DPL
 from models.utils.ops import outer_product
+from argparse import ArgumentParser
+from utils.args import add_management_args, add_experiment_args
 
 
 def get_parser() -> ArgumentParser:
@@ -18,6 +20,13 @@ def get_parser() -> ArgumentParser:
     parser = ArgumentParser(description="Learning via" "Concept Extractor .")
     add_management_args(parser)
     add_experiment_args(parser)
+    parser.add_argument(
+        "--step",
+        type=int,
+        required=True,
+        help="Cumulative step for filtering based on output_order.csv (must be > 0)"
+    )
+    return parser
     return parser
 
 

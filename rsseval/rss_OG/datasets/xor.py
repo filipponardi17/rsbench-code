@@ -1,10 +1,12 @@
-#gpt made
-from argparse import Namespace
+# xor.py
+import time
+import numpy as np
+import csv  # Assicurati di importare csv
 from datasets.utils.base_dataset import BaseDataset, XOR_get_loader
 from datasets.utils.xor_creation import XORDataset
 from backbones.cnnnosharing import CBMNoSharing, MNISTLCNN
-import time
-import numpy as np
+import os
+from argparse import Namespace
 
 class MNLOGIC(BaseDataset):
     NAME = "xor"
@@ -86,27 +88,46 @@ class MNLOGIC(BaseDataset):
         print("Test samples", len(self.dataset_test))
         print("Test OOD samples", len(self.dataset_ood))
 
-    
-
     def filtrate(self):
-        # Define the combinations to keep
-        combos_to_keep = [
-            [0, 0, 0, 0],
-            [0, 1, 0, 1],
-            [1, 1, 1, 0]
-        ]
+        # Verifica che args abbia il campo current_step
+        if not hasattr(self.args, "current_step"):
+            raise ValueError("Argument 'current_step' not found in args. Please provide --step when running the experiment.")
 
-        # Create a mask for filtering based on `combos_to_keep`
+        csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/output_selection_order1.csv"
+        if not os.path.exists(csv_file):
+            raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
+
+        cumulative_patterns = []
+        with open(csv_file, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            rows = list(reader)
+            # Controlla che il numero di righe sia sufficiente
+            if self.args.current_step > len(rows):
+                raise ValueError(f"Requested current_step {self.args.current_step} exceeds the number of rows in the CSV ({len(rows)}).")
+            # Accumula i pattern dalla colonna "selection_greedy_patterns_expanded" per le righe da 1 fino a current_step
+            for i in range(self.args.current_step):
+                row = rows[i]
+                # Usa la colonna con i pattern espansi
+                patterns_str = row["selection_greedy_patterns_expanded"]
+                if patterns_str.strip() != "":
+                    pattern_list = patterns_str.split(";")
+                    for pattern in pattern_list:
+                        pattern = pattern.strip()
+                        if pattern:
+                            # Converte la stringa in lista di interi, es. "0,0,0,0" -> [0, 0, 0, 0]
+                            pattern_int = [int(x.strip()) for x in pattern.split(",")]
+                            cumulative_patterns.append(pattern_int)
+        print(f"Cumulative patterns up to step {self.args.current_step}: {cumulative_patterns}")
+
+        # Crea la maschera di filtraggio: conserva solo i sample per cui il vettore dei concetti (convertito in lista) è presente in cumulative_patterns
         keep_mask = np.array([
-            c.tolist() in combos_to_keep for c in self.dataset_train.concepts
+            c.tolist() in cumulative_patterns for c in self.dataset_train.concepts
         ], dtype=bool)
 
-        # Apply the mask to filter the training dataset
         self.dataset_train.labels = self.dataset_train.labels[keep_mask]
         self.dataset_train.concepts = self.dataset_train.concepts[keep_mask]
         self.dataset_train.list_images = np.array(self.dataset_train.list_images, dtype=object)[keep_mask].tolist()
 
-        # Log the results
         old_size = len(keep_mask)
         new_size = len(self.dataset_train.labels)
         print(f"Filtrate train set: retained {new_size} samples out of {old_size} total.")

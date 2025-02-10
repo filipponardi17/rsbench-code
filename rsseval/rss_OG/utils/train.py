@@ -30,23 +30,32 @@ import numpy as np
 
 # Funzione per salvare il valore di cf1 (F1 dei concetti) in un CSV
 
-def log_concept_f1(epoch, cf1, filename="concept_f1.csv"):
-    """
-    Salva (o aggiunge) una riga nel file CSV contenente l'epoca corrente
-    e il valore cf1 (F1 score dei concetti).
+# In train.py
+import os
+import csv
 
+def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_c: float, filename="concept_f1_score.csv"):
+    """
+    Logga i punteggi dei concetti e delle etichette per uno specifico step in un unico file CSV.
+    La prima riga contiene l'intestazione:
+        ["Step", "Yac", "Yf1", "C_Acc", "Concept_F1", "Entropy H(C)"]
+    Ogni riga successiva contiene il numero di step e i valori dei punteggi ottenuti.
+    
     Args:
-        epoch (int): Epoca corrente.
+        step (int): Il numero dello step.
+        yac (float): Accuracy (o altro valore) per le label (Yac).
+        yf1 (float): F1 score per le label (Yf1).
+        cac (float): Accuracy dei concetti.
         cf1 (float): F1 score dei concetti.
-        filename (str): Nome del file CSV (default "concept_f1.csv").
+        h_c (float): Valore dell'Entropy H(C).
+        filename (str): Nome del file CSV in cui salvare i log.
     """
     file_exists = os.path.exists(filename)
     with open(filename, "a", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        # Se il file non esiste ancora, scrivi anche l'intestazione
         if not file_exists:
-            writer.writerow(["Epoch", "Concept_F1"])
-        writer.writerow([epoch, cf1])
+            writer.writerow(["Step", "Yac", "Yf1", "C_Acc", "Concept_F1", "Entropy H(C)"])
+        writer.writerow([f"step{step}", yac, yf1, cac, cf1, h_c])
 
 def convert_to_categories(elements):
     # Convert vector of 0s and 1s to a single binary representation along the first dimension
@@ -539,9 +548,10 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             h_c = mean_entropy(p_cs_all, model.n_facts)
 
             fprint(f"Concepts:\n    ACC: {cac}, F1: {cf1}")
-            log_concept_f1(epoch, cf1)
             fprint(f"Labels:\n      ACC: {yac}, F1: {yf1}")
             fprint(f"Entropy:\n     H(C): {h_c}")
+            # Logga tutti i valori nel file CSV
+            log_concept_f1(args.current_step, yac, yf1, cac, cf1, h_c)
 
         if args.task == "boia":
             y_labels = ["stop", "forward", "left", "right"]

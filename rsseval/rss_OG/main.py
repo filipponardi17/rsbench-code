@@ -166,56 +166,85 @@ def tune(args):
     wandb.agent(sweep_id, function=train_conf, count=args.count)
 
 
+# main.py (solo la parte modificata della funzione main)
 def main(args):
     """Main function. Provides functionalities for training, testing and active learning.
-
+    
     Args:
         args: parsed command line arguments.
-
+    
     Returns:
-        None: This function does not return a value.
+        None
     """
     if not args.tuning:
-        # Add uuid, timestamp and hostname for logging
-        args.conf_jobnum = str(uuid.uuid4())
-        args.conf_timestamp = str(datetime.datetime.now())
-        args.conf_host = socket.gethostname()
-        dataset = get_dataset(args)
+        # Se l'argomento --step è presente, esegui training per ogni step cumulativo
+        if hasattr(args, "step"):
+            max_step = args.step
+            for current in range(1, max_step + 1):
+                print(f"\n=== Starting training for cumulative step {current} ===")
+                # Imposta il campo current_step da usare nel filtraggio
+                args.current_step = current
 
-        # Load dataset, model, loss, and optimizer
-        encoder, decoder = dataset.get_backbone()
-        n_images, c_split = dataset.get_split()
-        model = get_model(args, encoder, decoder, n_images, c_split)
-        loss = model.get_loss(args)
-        model.start_optim(args)
+                # Reinizializza dataset, modello, loss, ottimizzatore per ogni iterazione
+                dataset = get_dataset(args)
+                encoder, decoder = dataset.get_backbone()
+                n_images, c_split = dataset.get_split()
+                model = get_model(args, encoder, decoder, n_images, c_split)
+                loss = model.get_loss(args)
+                model.start_optim(args)
 
-        # SAVE A BASE MODEL OR LOAD IT, LOAD A CHECKPOINT IF PROVIDED
-        # model = create_load_ckpt(model, args)
+                # Imposta il job name includendo lo step corrente
+                setproctitle.setproctitle(
+                    "{}_{}_{}_step{}".format(
+                        args.model,
+                        args.buffer_size if "buffer_size" in args else 0,
+                        args.dataset,
+                        current
+                    )
+                )
+                print("    Chosen device:", model.device)
 
-        # set job name
-        setproctitle.setproctitle(
-            "{}_{}_{}".format(
-                args.model,
-                args.buffer_size if "buffer_size" in args else 0,
-                args.dataset,
-            )
-        )
+                if args.preprocess:
+                    preprocess(model, dataset, args)
+                    print("\n ### Closing ###")
+                    quit()
 
-        # perform posthoc evaluation/ cl training/ joint training
-        print("    Chosen device:", model.device)
-
-        if args.preprocess:
-            preprocess(model, dataset, args)
-            print("\n ### Closing ###")
-            quit()
-
-        if args.probe:
-            probe(model, dataset, args)
-        elif args.posthoc:
-            test(model, dataset, args)  # test the model if post-hoc is passed
+                if args.probe:
+                    probe(model, dataset, args)
+                elif args.posthoc:
+                    test(model, dataset, args)  # test the model if post-hoc is passed
+                else:
+                    train(model, dataset, loss, args)  # train the model otherwise
+                    # Salva il modello includendo lo step nel filename (per non sovrascrivere)
+                    save_model(model, args)
+                print(f"\n=== Finished training for cumulative step {current} ===\n")
         else:
-            train(model, dataset, loss, args)  # train the model otherwise
-            save_model(model, args)  # save the model parameters
+            # Se l'argomento --step non è presente, esegui il training normalmente
+            dataset = get_dataset(args)
+            encoder, decoder = dataset.get_backbone()
+            n_images, c_split = dataset.get_split()
+            model = get_model(args, encoder, decoder, n_images, c_split)
+            loss = model.get_loss(args)
+            model.start_optim(args)
+            setproctitle.setproctitle(
+                "{}_{}_{}".format(
+                    args.model,
+                    args.buffer_size if "buffer_size" in args else 0,
+                    args.dataset,
+                )
+            )
+            print("    Chosen device:", model.device)
+            if args.preprocess:
+                preprocess(model, dataset, args)
+                print("\n ### Closing ###")
+                quit()
+            if args.probe:
+                probe(model, dataset, args)
+            elif args.posthoc:
+                test(model, dataset, args)
+            else:
+                train(model, dataset, loss, args)
+                save_model(model, args)
     else:
         tune(args)
 
