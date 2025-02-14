@@ -47,11 +47,24 @@ class MNLOGIC(BaseDataset):
         print(" len test:", len(self.dataset_test))
 
         # ======================================
-        # Filtraggio del train set per i task selezionati
+        # Filtraggio del train 
         self.filtrate()
         # ======================================
 
+        # import numpy as np
+        # print("train")
+        # print(np.unique(self.dataset_train.labels, axis=-1)) 
+        # print("test")
+        # print(np.unique(self.dataset_test.labels, axis=-1))
+        # print("val")
+        # print(np.unique(self.dataset_val.labels, axis=-1))
+        # quit()
 
+        ########################################################
+        #
+        #BLOCCO PER QUANDO RANDOM PARTE CON TROPPI POCHI TASK
+        #
+        #########################################################
         # Se il dataset filtrato ha meno sample di args.batch_size, effettua oversampling
         filtered_count = len(self.dataset_train.labels)
         if filtered_count < self.args.batch_size:
@@ -106,30 +119,30 @@ class MNLOGIC(BaseDataset):
         print("Test OOD samples", len(self.dataset_ood))
 
     def filtrate(self):
-        # Verifica che args abbia il campo current_step e method
+        # non mi va di fixare lasciamo che è obbligatorio
         if not hasattr(self.args, "current_step"):
             raise ValueError("Argument 'current_step' not found in args. Please provide --step when running the experiment.")
         if not hasattr(self.args, "method"):
             raise ValueError("Argument 'method' not found in args. Please provide --method when running the experiment.")
 
-        # Specifica il file CSV (modifica il percorso se necessario)
+        # PERCORSO_CSV
         csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/output_selection_order2.csv"
         if not os.path.exists(csv_file):
             raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
 
-        # Scegli la colonna da usare in base al metodo:
-        # Se method == "greedy" utilizza "selection_greedy_patterns_expanded"
-        # Se method == "random" utilizza "selection_random_patterns_expanded"
+        # colonna da usare:
+        #  method == "greedy" -> "selection_greedy_patterns_expanded"
+        #  method == "random" -> "selection_random_patterns_expanded"
         column_to_use = f"selection_{self.args.method}_patterns_expanded"
 
         cumulative_patterns = []
         with open(csv_file, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             rows = list(reader)
-            # Controlla che il numero di righe sia sufficiente
+            # TO CHECK 
             if self.args.current_step > len(rows):
                 raise ValueError(f"Requested current_step {self.args.current_step} exceeds the number of rows in the CSV ({len(rows)}).")
-            # Accumula i pattern dalla colonna scelta per le righe da 1 fino a current_step
+            # per pattern xor
             for i in range(self.args.current_step):
                 row = rows[i]
                 patterns_str = row[column_to_use]

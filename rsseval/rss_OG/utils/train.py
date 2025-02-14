@@ -462,7 +462,6 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             y_pred = (ys > 0.5).to(torch.long)
         else:
             y_pred = torch.argmax(ys, dim=-1)
-
         if args.task == "boia":
             acc, f1 = accuracy_binary(ys, y_true)
 
@@ -545,6 +544,18 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             y_true, c_true, y_pred, c_pred, p_cs, p_ys, p_cs_all, p_ys_all = (
                 evaluate_metrics(model, test_loader, args, last=True)
             )
+
+            # aggiungiamo conf matrix
+            labels = dataset.get_labels()
+            cm = plot_confusion_matrix(
+                y_true,
+                y_pred,
+                labels=labels,
+                title="Confusion Matrix Final Validation",
+                save_path="confusion_final.png"
+            )
+            print("Confusion Matrix finale:")
+            print(cm)
 
         if "patterns" not in args.task:
             yac, yf1 = evaluate_mix(y_true, y_pred)

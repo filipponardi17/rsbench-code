@@ -192,7 +192,7 @@ class GenericSyntheticDatasetGenerator:
                 negative_to_sample = negative_ood
 
             # count of samples to generate
-            total_positive_samples = train_size // 2
+            total_positive_samples = dataset_size // 2
 
             log(
                 "info",

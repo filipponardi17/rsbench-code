@@ -79,7 +79,7 @@ def get_args():
         "--n_samples",
         type=check_range,
         metavar="N_SAMPLES",
-        default=1000,
+        default=2000,
         help="Number of samples for the training set",
     )
     parser.add_argument(

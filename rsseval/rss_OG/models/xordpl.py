@@ -27,7 +27,7 @@ def get_parser() -> ArgumentParser:
         required=True,
         help="Cumulative step for filtering based on output_order.csv (must be > 0)"
     )
-    # Aggiungi l'argomento --method con scelte "greedy" o "random"
+    # Aggiungiamo --method con scelte "greedy" o "random"
     parser.add_argument(
         "--method",
         type=str,
