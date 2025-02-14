@@ -20,13 +20,21 @@ def get_parser() -> ArgumentParser:
     parser = ArgumentParser(description="Learning via" "Concept Extractor .")
     add_management_args(parser)
     add_experiment_args(parser)
+    #aggiungiamo arg step
     parser.add_argument(
         "--step",
         type=int,
         required=True,
         help="Cumulative step for filtering based on output_order.csv (must be > 0)"
     )
-    return parser
+    # Aggiungi l'argomento --method con scelte "greedy" o "random"
+    parser.add_argument(
+        "--method",
+        type=str,
+        choices=["greedy", "random"],
+        required=True,
+        help="Method to use for filtering: 'greedy' will use the column selection_greedy_patterns_expanded, while 'random' will use selection_random_patterns_expanded"
+    )
     return parser
 
 

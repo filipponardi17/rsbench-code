@@ -51,6 +51,23 @@ class MNLOGIC(BaseDataset):
         self.filtrate()
         # ======================================
 
+
+        # Se il dataset filtrato ha meno sample di args.batch_size, effettua oversampling
+        filtered_count = len(self.dataset_train.labels)
+        if filtered_count < self.args.batch_size:
+            oversample_count = self.args.batch_size - filtered_count
+            print(f"Dataset filtrato molto piccolo: {filtered_count} sample. Oversampling {oversample_count} sample casualmente per raggiungere {self.args.batch_size}.")
+            import numpy as np
+            # Seleziona indici casuali con ripetizione (oversampling con replacement)
+            random_indices = np.random.randint(0, filtered_count, oversample_count)
+            # Supponendo che self.dataset_train.labels e self.dataset_train.concepts siano array numpy
+            self.dataset_train.labels = np.concatenate([self.dataset_train.labels, self.dataset_train.labels[random_indices]])
+            self.dataset_train.concepts = np.concatenate([self.dataset_train.concepts, self.dataset_train.concepts[random_indices]])
+            # Per le immagini, che sono salvate come lista, convertiamo in array, oversample e riconvertiamo a lista
+            current_images = np.array(self.dataset_train.list_images, dtype=object)
+            new_images = current_images[random_indices]
+            self.dataset_train.list_images = np.concatenate([current_images, new_images]).tolist()
+
         keep_order = True if self.return_embeddings else False
         self.train_loader = XOR_get_loader(
             self.dataset_train, self.args.batch_size, val_test=keep_order
@@ -89,13 +106,21 @@ class MNLOGIC(BaseDataset):
         print("Test OOD samples", len(self.dataset_ood))
 
     def filtrate(self):
-        # Verifica che args abbia il campo current_step
+        # Verifica che args abbia il campo current_step e method
         if not hasattr(self.args, "current_step"):
             raise ValueError("Argument 'current_step' not found in args. Please provide --step when running the experiment.")
+        if not hasattr(self.args, "method"):
+            raise ValueError("Argument 'method' not found in args. Please provide --method when running the experiment.")
 
-        csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/output_selection_order1.csv"
+        # Specifica il file CSV (modifica il percorso se necessario)
+        csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/output_selection_order2.csv"
         if not os.path.exists(csv_file):
             raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
+
+        # Scegli la colonna da usare in base al metodo:
+        # Se method == "greedy" utilizza "selection_greedy_patterns_expanded"
+        # Se method == "random" utilizza "selection_random_patterns_expanded"
+        column_to_use = f"selection_{self.args.method}_patterns_expanded"
 
         cumulative_patterns = []
         with open(csv_file, newline='') as csvfile:
@@ -104,11 +129,10 @@ class MNLOGIC(BaseDataset):
             # Controlla che il numero di righe sia sufficiente
             if self.args.current_step > len(rows):
                 raise ValueError(f"Requested current_step {self.args.current_step} exceeds the number of rows in the CSV ({len(rows)}).")
-            # Accumula i pattern dalla colonna "selection_greedy_patterns_expanded" per le righe da 1 fino a current_step
+            # Accumula i pattern dalla colonna scelta per le righe da 1 fino a current_step
             for i in range(self.args.current_step):
                 row = rows[i]
-                # Usa la colonna con i pattern espansi
-                patterns_str = row["selection_greedy_patterns_expanded"]
+                patterns_str = row[column_to_use]
                 if patterns_str.strip() != "":
                     pattern_list = patterns_str.split(";")
                     for pattern in pattern_list:
@@ -117,7 +141,7 @@ class MNLOGIC(BaseDataset):
                             # Converte la stringa in lista di interi, es. "0,0,0,0" -> [0, 0, 0, 0]
                             pattern_int = [int(x.strip()) for x in pattern.split(",")]
                             cumulative_patterns.append(pattern_int)
-        print(f"Cumulative patterns up to step {self.args.current_step}: {cumulative_patterns}")
+        print(f"Cumulative patterns up to step {self.args.current_step} using column '{column_to_use}': {cumulative_patterns}")
 
         # Crea la maschera di filtraggio: conserva solo i sample per cui il vettore dei concetti (convertito in lista) è presente in cumulative_patterns
         keep_mask = np.array([

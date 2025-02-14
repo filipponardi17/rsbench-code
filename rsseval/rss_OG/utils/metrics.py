@@ -303,6 +303,14 @@ def evaluate_metrics(
             # by default, consider the concept to return as separated internally
             gs = c_true
             cs = c_pred.argmax(axis=2)
+        
+        # print("y_true:", y_true)
+        # print("y_pred:", y_pred)
+        # Calcola il F1 score in modalità macro.
+        # Nota: per il confronto, in questo branch (non specializzato) hai fatto:
+        #    ys = np.argmax(y_pred, axis=1)
+        f1_macro = f1_score(y_true, ys, average="macro")
+        print("F1 score (macro):", f1_macro)
 
         return y_true, gs, ys, cs, p_cs, p_ys, p_cs_all, p_ys_all
     else:

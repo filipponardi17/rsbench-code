@@ -34,7 +34,8 @@ import numpy as np
 import os
 import csv
 
-def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_c: float, filename="concept_f1_score.csv"):
+
+def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_c: float, method: str, filename: str = None):
     """
     Logga i punteggi dei concetti e delle etichette per uno specifico step in un unico file CSV.
     La prima riga contiene l'intestazione:
@@ -43,13 +44,16 @@ def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_
     
     Args:
         step (int): Il numero dello step.
-        yac (float): Accuracy (o altro valore) per le label (Yac).
-        yf1 (float): F1 score per le label (Yf1).
+        yac (float): Accuracy per le label.
+        yf1 (float): F1 score per le label.
         cac (float): Accuracy dei concetti.
         cf1 (float): F1 score dei concetti.
-        h_c (float): Valore dell'Entropy H(C).
-        filename (str): Nome del file CSV in cui salvare i log.
+        h_c (float): Entropy H(C).
+        method (str): Il metodo usato ("greedy" o "random").
+        filename (str, opzionale): Se non specificato, il file sarà "log_concept_{method}_score.csv".
     """
+    if filename is None:
+        filename = f"log_concept_{method}_score.csv"
     file_exists = os.path.exists(filename)
     with open(filename, "a", newline="") as csvfile:
         writer = csv.writer(csvfile)
@@ -551,7 +555,7 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             fprint(f"Labels:\n      ACC: {yac}, F1: {yf1}")
             fprint(f"Entropy:\n     H(C): {h_c}")
             # Logga tutti i valori nel file CSV
-            log_concept_f1(args.current_step, yac, yf1, cac, cf1, h_c)
+            log_concept_f1(args.current_step, yac, yf1, cac, cf1, h_c, args.method)
 
         if args.task == "boia":
             y_labels = ["stop", "forward", "left", "right"]
