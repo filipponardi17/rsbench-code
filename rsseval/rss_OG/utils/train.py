@@ -494,6 +494,15 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
                 "%",
                 len(y_true),
             )
+            print("Y TRUE")
+            print(y_true.shape)
+            print(np.unique(y_true.cpu().detach(), return_counts=True, axis=-1))
+
+            print("Y PRED")
+            print(y_pred.shape)
+            print(np.unique(y_pred.cpu().detach(), return_counts=True, axis=-1))
+
+            
 
         model.eval()
         tloss, cacc, yacc, f1 = evaluate_metrics(model, val_loader, args)
@@ -544,6 +553,8 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             y_true, c_true, y_pred, c_pred, p_cs, p_ys, p_cs_all, p_ys_all = (
                 evaluate_metrics(model, test_loader, args, last=True)
             )
+
+
 
             # aggiungiamo conf matrix
             labels = dataset.get_labels()

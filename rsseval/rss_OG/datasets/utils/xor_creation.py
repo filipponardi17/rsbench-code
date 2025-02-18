@@ -28,14 +28,14 @@ class XORDataset(torch.utils.data.Dataset):
         self.list_images = sorted(self.list_images, key=self._extract_number)
 
         # ok transform
-        self.transform = transforms.Compose([transforms.ToTensor()])
+        self.transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         self.labels, self.concepts = [], []
 
         # lmao
         new_images = self.list_images.copy()
 
         # extract labels and concepts
-        for item in self.list_images:
+        for idx, item in enumerate(self.list_images):
             name = os.path.splitext(os.path.basename(item))[0]
             # extract the ids out of the images
             meta_id = name.split("_")[-1]
@@ -53,6 +53,7 @@ class XORDataset(torch.utils.data.Dataset):
                 )
                 continue
 
+
             # concepts and labels
             concepts, labels = [], []
 
@@ -68,6 +69,10 @@ class XORDataset(torch.utils.data.Dataset):
 
             concepts = np.array(concept_values)
             self.concepts.append(concepts)
+            # if idx >= 995:
+            #     print(item, label, concept_values)
+            # if idx >= 1005:
+            #     quit()
 #MODFIED HERE
         # self.concepts = np.stack(self.concepts, axis=0)
         # self.labels = np.stack(self.labels, axis=0)

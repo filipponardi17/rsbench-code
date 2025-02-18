@@ -53,33 +53,33 @@ class MNLOGIC(BaseDataset):
 
         # import numpy as np
         # print("train")
-        # print(np.unique(self.dataset_train.labels, axis=-1)) 
+        # print(np.unique(self.dataset_train.labels, axis=-1, return_counts=True)) 
         # print("test")
-        # print(np.unique(self.dataset_test.labels, axis=-1))
+        # print(np.unique(self.dataset_test.labels, axis=-1, return_counts=True))
         # print("val")
-        # print(np.unique(self.dataset_val.labels, axis=-1))
+        # print(np.unique(self.dataset_val.labels, axis=-1, return_counts=True))
         # quit()
 
         ########################################################
         #
-        #BLOCCO PER QUANDO RANDOM PARTE CON TROPPI POCHI TASK
+        #SERVE SE RANDOM (PRIMA CALL) HA TROPPI POCHI TASK
         #
         #########################################################
         # Se il dataset filtrato ha meno sample di args.batch_size, effettua oversampling
-        filtered_count = len(self.dataset_train.labels)
-        if filtered_count < self.args.batch_size:
-            oversample_count = self.args.batch_size - filtered_count
-            print(f"Dataset filtrato molto piccolo: {filtered_count} sample. Oversampling {oversample_count} sample casualmente per raggiungere {self.args.batch_size}.")
-            import numpy as np
-            # Seleziona indici casuali con ripetizione (oversampling con replacement)
-            random_indices = np.random.randint(0, filtered_count, oversample_count)
-            # Supponendo che self.dataset_train.labels e self.dataset_train.concepts siano array numpy
-            self.dataset_train.labels = np.concatenate([self.dataset_train.labels, self.dataset_train.labels[random_indices]])
-            self.dataset_train.concepts = np.concatenate([self.dataset_train.concepts, self.dataset_train.concepts[random_indices]])
-            # Per le immagini, che sono salvate come lista, convertiamo in array, oversample e riconvertiamo a lista
-            current_images = np.array(self.dataset_train.list_images, dtype=object)
-            new_images = current_images[random_indices]
-            self.dataset_train.list_images = np.concatenate([current_images, new_images]).tolist()
+        # filtered_count = len(self.dataset_train.labels)
+        # if filtered_count < self.args.batch_size:
+        #     oversample_count = self.args.batch_size - filtered_count
+        #     print(f"Dataset filtrato molto piccolo: {filtered_count} sample. Oversampling {oversample_count} sample casualmente per raggiungere {self.args.batch_size}.")
+        #     import numpy as np
+        #     # Seleziona indici casuali con ripetizione (oversampling con replacement)
+        #     random_indices = np.random.randint(0, filtered_count, oversample_count)
+        #     # Supponendo che self.dataset_train.labels e self.dataset_train.concepts siano array numpy
+        #     self.dataset_train.labels = np.concatenate([self.dataset_train.labels, self.dataset_train.labels[random_indices]])
+        #     self.dataset_train.concepts = np.concatenate([self.dataset_train.concepts, self.dataset_train.concepts[random_indices]])
+        #     # Per le immagini, che sono salvate come lista, convertiamo in array, oversample e riconvertiamo a lista
+        #     current_images = np.array(self.dataset_train.list_images, dtype=object)
+        #     new_images = current_images[random_indices]
+        #     self.dataset_train.list_images = np.concatenate([current_images, new_images]).tolist()
 
         keep_order = True if self.return_embeddings else False
         self.train_loader = XOR_get_loader(
@@ -126,7 +126,7 @@ class MNLOGIC(BaseDataset):
             raise ValueError("Argument 'method' not found in args. Please provide --method when running the experiment.")
 
         # PERCORSO_CSV
-        csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/output_selection_order2.csv"
+        csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/output_selection_order3.csv"
         if not os.path.exists(csv_file):
             raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
 
@@ -139,10 +139,10 @@ class MNLOGIC(BaseDataset):
         with open(csv_file, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             rows = list(reader)
-            # TO CHECK 
+            # TO CHECK SE NO SI ROMPE
             if self.args.current_step > len(rows):
                 raise ValueError(f"Requested current_step {self.args.current_step} exceeds the number of rows in the CSV ({len(rows)}).")
-            # per pattern xor
+            #  pattern xor
             for i in range(self.args.current_step):
                 row = rows[i]
                 patterns_str = row[column_to_use]
@@ -156,7 +156,7 @@ class MNLOGIC(BaseDataset):
                             cumulative_patterns.append(pattern_int)
         print(f"Cumulative patterns up to step {self.args.current_step} using column '{column_to_use}': {cumulative_patterns}")
 
-        # Crea la maschera di filtraggio: conserva solo i sample per cui il vettore dei concetti (convertito in lista) è presente in cumulative_patterns
+        # maschera di filtraggio: usiamo solo i sample per cui il vettore dei concetti (convertito in lista) è presente in cumulative_patterns
         keep_mask = np.array([
             c.tolist() in cumulative_patterns for c in self.dataset_train.concepts
         ], dtype=bool)

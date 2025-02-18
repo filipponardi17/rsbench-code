@@ -1,4 +1,5 @@
-print("SIAMO NEL MODELLO DI MARTEDI MATTINA")
+print("SIAMO NEL MODELLO SBAGLIATO")
+quit()
 
 # DPL model for XOR
 import torch
@@ -11,28 +12,7 @@ from utils.dpl_loss import XOR_DPL
 from models.utils.ops import outer_product
 from argparse import ArgumentParser
 from utils.args import add_management_args, add_experiment_args
-import torch.nn.functional as F
 
-
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1)
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
-        self.fc1 = nn.Linear(64 * 7 * 28, 128)
-        self.fc2 = nn.Linear(128, 8)
-        self.fc3 = nn.Linear(128, 2)  
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))  
-        x = self.pool(F.relu(self.conv2(x))) 
-        x = x.view(x.size(0), -1)            
-        x = F.relu(self.fc1(x))
-        x2 = self.fc3(x)
-        x = self.fc2(x)
-        x = x.view(x.shape[0], 4 , 2)
-        return x, x2  
 
 def get_parser() -> ArgumentParser:
     """Returns the parser
@@ -97,7 +77,7 @@ class XORDPL(DeepProblogModel):
             None: This function does not return a value.
         """
         super(XORDPL, self).__init__(
-            encoder=CNN(),
+            encoder=encoder,
             model_dict=model_dict,
             n_facts=n_facts,
             nr_classes=nr_classes,
@@ -128,20 +108,25 @@ class XORDPL(DeepProblogModel):
         Returns:
             out_dict: output dict
         """
-        cs, cs2 = self.encoder(x)
+        # Image encoding
+        cs = []
+        xs = torch.split(x, x.size(-1) // self.n_images, dim=-1)
+        
+        # cs
+        cs = self.encoder(xs)
 
         # normalize concept preditions
         pCs = self.normalize_concepts(cs)
 
 
-        #print("shape PCS QUIIII")
-        #print(pCs[0])
+        # print("shape PCS QUIIII")
+        # print(pCs.shape)
         #concepts= torch.nn.functional.one_hot(concepts.long(), num_classes=2).float()
         # print("shape concepts QUIIII")
         # print(concepts.shape)
         #quit()
 
-        #py = F.softmax(cs2, dim=-1)
+
         # Problog inference to compute worlds and query probability distributions
         py, worlds_prob = self.problog_inference(pCs)
 

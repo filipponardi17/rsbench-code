@@ -966,7 +966,9 @@ def create_xor(sequence_len=0, n_digits=0, task="xor"):
         for w in range(n_worlds):
             digit1, digit2, digit3, digit4 = look_up[w]
             if (digit1 + digit2 + digit3 + digit4) % 2 == 0:
-                w_q[w, 1] = 1
+                w_q[w, 0] = 1
+            else:
+                w_q[w, 1]=1
         return w_q
     else:
         NotImplementedError("Wrong choice")

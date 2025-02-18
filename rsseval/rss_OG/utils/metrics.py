@@ -307,8 +307,6 @@ def evaluate_metrics(
         # print("y_true:", y_true)
         # print("y_pred:", y_pred)
         # Calcola il F1 score in modalità macro.
-        # Nota: per il confronto, in questo branch (non specializzato) hai fatto:
-        #    ys = np.argmax(y_pred, axis=1)
         f1_macro = f1_score(y_true, ys, average="macro")
         print("F1 score (macro):", f1_macro)
 
