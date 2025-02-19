@@ -51,7 +51,7 @@ def rss_count_for_subset(gvecs_subset, ys_subset, n_variables):
 
 
 def greedy_selection_containers(containers, gs_all, ys_all, gvecs_all, n_variables):
-    MAX_SELECTIONS = 10
+    MAX_SELECTIONS = 20
 
     T = list(range(len(containers)))  # indici di tutti i contenitori disponibili
     S = []                            # lista di contenitori scelti (indici in T)
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     n_variables = 4
     gs_all, ys_all, gvecs_all = generate_xor_patterns(n_variables)
 
-    for run_idx in range(1, 10):
+    for run_idx in range(1, 20):
         print(f"\n=== RUN {run_idx} ===")
 
         containers = define_random_containers(n_variables, seed=run_idx, min_size=1, max_size=3)

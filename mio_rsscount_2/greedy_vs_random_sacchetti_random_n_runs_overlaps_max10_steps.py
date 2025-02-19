@@ -81,7 +81,7 @@ def greedy_selection_containers(containers, gs_all, ys_all, gvecs_all, n_variabl
     return S, rs_values
 
 def random_selection_containers(containers, gs_all, ys_all, gvecs_all, n_variables, seed=0):
-    MAX_SELECTIONS = 10
+    MAX_SELECTIONS = 20
 
     rng = np.random.RandomState(seed)
     T = list(range(len(containers)))
@@ -111,10 +111,10 @@ def random_selection_containers(containers, gs_all, ys_all, gvecs_all, n_variabl
 if __name__ == "__main__":
     start_global = time.time()
 
-    n_variables = 5
+    n_variables = 4
     gs_all, ys_all, gvecs_all = generate_xor_patterns(n_variables)
 
-    for run_idx in range(1, 21):
+    for run_idx in range(1, 10):
         print(f"\n=== RUN {run_idx} ===")
 
         containers = define_random_containers(n_variables, seed=run_idx, min_size=1, max_size=3)
@@ -124,7 +124,7 @@ if __name__ == "__main__":
         # Replichiamo ciascun contenitore 4 volte
         extended_containers = []
         for c in containers:
-            for _ in range(10):
+            for _ in range(5):
                 extended_containers.append(c)
         containers = extended_containers
         print(f"Numero di contenitori totali dopo la replica: {len(containers)}")

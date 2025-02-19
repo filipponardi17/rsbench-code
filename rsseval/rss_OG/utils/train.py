@@ -53,12 +53,12 @@ def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_
         filename (str, opzionale): Se non specificato, il file sarà "log_concept_{method}_score.csv".
     """
     if filename is None:
-        filename = f"log_concept_{method}_score.csv"
+        filename = f"very_large_log_concept_{method}_score.csv"
     file_exists = os.path.exists(filename)
     with open(filename, "a", newline="") as csvfile:
         writer = csv.writer(csvfile)
         if not file_exists:
-            writer.writerow(["Step", "Yac", "Yf1", "C_Acc", "Concept_F1", "Entropy H(C)"])
+            writer.writerow(["Step", "Labels_Accuracy", "Labels_F1", "Concept_Accuracy", "Concept_F1", "Entropy H(C)"])
         writer.writerow([f"step{step}", yac, yf1, cac, cf1, h_c])
 
 def convert_to_categories(elements):
