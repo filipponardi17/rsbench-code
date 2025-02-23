@@ -48,7 +48,7 @@ class MNLOGIC(BaseDataset):
 
         # ======================================
         # Filtraggio del train 
-        self.filtrate()
+        #self.filtrate()
         # ======================================
 
         # import numpy as np
@@ -126,7 +126,7 @@ class MNLOGIC(BaseDataset):
             raise ValueError("Argument 'method' not found in args. Please provide --method when running the experiment.")
 
         # PERCORSO_CSV
-        csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/very_large_output_selection_order1.csv"
+        csv_file = "/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/ultra_large_output_selection_order1.csv"
         if not os.path.exists(csv_file):
             raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
 

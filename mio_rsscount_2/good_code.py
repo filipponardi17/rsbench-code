@@ -73,7 +73,7 @@ def greedy_selection_containers(containers, gs_all, ys_all, gvecs_all, n_variabl
     Selezione 'greedy': ad ogni step aggiunge il contenitore che minimizza la RSS risultante.
     Parte con un dataset vuoto (RSS calcolata subito come step 0).
     """
-    MAX_SELECTIONS = 30
+    MAX_SELECTIONS = 50
 
     T = list(range(len(containers)))  # Indici di tutti i contenitori disponibili
     S = []                            # Lista di contenitori scelti (indici in T)
@@ -123,7 +123,7 @@ def random_selection_containers(containers, gs_all, ys_all, gvecs_all, n_variabl
     Selezione 'random': ad ogni step sceglie un contenitore a caso.
     Parte con un dataset vuoto (RSS calcolata subito come step 0).
     """
-    MAX_SELECTIONS = 30
+    MAX_SELECTIONS = 50
 
     rng = np.random.RandomState(seed)
     T = list(range(len(containers)))  # Indici di tutti i contenitori disponibili
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         # Replichiamo ciascun contenitore 10 volte
         extended_containers = []
         for c in containers:
-            for _ in range(20):
+            for _ in range(50):
                 extended_containers.append(c)
         containers = extended_containers
         print(f"Numero di contenitori totali dopo la replica: {len(containers)}")
@@ -195,7 +195,7 @@ if __name__ == "__main__":
         n_steps_sel = min(len(S_random), len(S_greedy))
 
         # 1) CSV con i valori RS
-        rs_filename = f"very_large_output_rs_values{run_idx}.csv"
+        rs_filename = f"ultra_large_output_rs_values{run_idx}.csv"
         with open(rs_filename, 'w', newline='') as csvfile:
             fieldnames = ['step', 'rs_random', 'rs_greedy']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -209,7 +209,7 @@ if __name__ == "__main__":
                 })
 
         # 2) CSV con l'ordine di selezione dei contenitori *e* i pattern
-        sel_filename = f"very_large_output_selection_order{run_idx}.csv"
+        sel_filename = f"ultra_large_output_selection_order{run_idx}.csv"
         with open(sel_filename, 'w', newline='') as csvfile:
             fieldnames = [
                 'step', 
