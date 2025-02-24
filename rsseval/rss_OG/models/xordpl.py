@@ -58,6 +58,12 @@ def get_parser() -> ArgumentParser:
         required=True,
         help="Method to use for filtering: 'greedy' will use the column selection_greedy_patterns_expanded, while 'random' will use selection_random_patterns_expanded"
     )
+    parser.add_argument(
+    "--run",
+    type=int,
+    default=1,
+    help="Numero della run corrente: usato per selezionare il file CSV corrispondente (es. 1 per ultra_large_output_selection_order1.csv, 2 per ultra_large_output_selection_order2.csv, ecc.)"
+    )
     return parser
 
 

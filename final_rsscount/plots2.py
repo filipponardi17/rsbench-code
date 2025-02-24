@@ -8,7 +8,7 @@ import plotly.offline as pyo
 
 def main():
     # Trova tutti i file CSV nella cartella corrente che matchano il pattern
-    csv_files = sorted(glob.glob('rq3_output_rs_values*.csv'))
+    csv_files = sorted(glob.glob('rq5_output_rs_values*.csv'))
 
     if not csv_files:
         print("Nessun file CSV trovato con il pattern 'rq1_output_rs_values*.csv'.")
@@ -94,7 +94,7 @@ def main():
     fig = go.Figure(data=[fill_random, trace_random, fill_greedy, trace_greedy], layout=layout)
 
     # Mostra il grafico in locale (aprirà una pagina web con il grafico)
-    pyo.plot(fig, filename='rq3_values_plot.html')
+    pyo.plot(fig, filename='rq5_values_plot.html')
 
 if __name__ == "__main__":
     main()

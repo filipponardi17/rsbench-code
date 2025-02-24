@@ -254,4 +254,18 @@ def main(args):
 if __name__ == "__main__":
     args = parse_args()
 
-    main(args)
+    # Imposta il numero totale di run da eseguire.
+    # Se args.run è definito, lo usiamo come numero totale; altrimenti ne eseguiamo una sola.
+    total_runs = args.run if hasattr(args, "run") else 1
+
+    for current_run in range(1, total_runs + 1):
+        print(f"\n=== Starting run {current_run}/{total_runs} ===\n")
+        # Aggiorna l'attributo run in args: questo farà sì che,
+        # ad esempio, nella funzione filtrate() venga utilizzato il file CSV corrispondente.
+        args.run = current_run
+
+        # Avvia il ciclo principale (training, test, ecc.) per la run corrente
+        main(args)
+        print(f"\n=== Finished run {current_run}/{total_runs} ===\n")
+
+    print("\n=== All runs completed ===\n")

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 def main():
     # Trova tutti i file CSV nella cartella corrente che matchano il pattern
-    csv_files = sorted(glob.glob('rq3_output_rs_values*.csv'))
+    csv_files = sorted(glob.glob('rq5_output_rs_values*.csv'))
 
     if not csv_files:
         print("Nessun file CSV trovato con il pattern 'output_rs_values*.csv'.")
@@ -69,7 +69,7 @@ def main():
     plt.grid(True, linestyle='--', alpha=0.6)
 
     # Salva il grafico su file
-    plt.savefig('rq3_values_plot.png', dpi=300)
+    plt.savefig('rq5_values_plot.png', dpi=300)
 
     # Mostra il grafico
     plt.show()
