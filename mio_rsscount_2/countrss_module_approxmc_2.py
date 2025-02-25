@@ -331,12 +331,31 @@ class ConfigurableXOR(Dataset):
     def encode_background(self, A):
         return True
 
+        
+from pyeda.inter import And, Or, Equal
+
+class ConfigurableCustomFormula(ConfigurableXOR):
+    def k(self, cvec, y):
+        # Estrai i bit significativi (si assume la codifica one-hot con 2 bit per variabile)
+        c1 = cvec[1]
+        c2 = cvec[3]
+        c3 = cvec[5]
+        c4 = cvec[7]
+
+        # Costruisci l'espressione secondo la formula:
+        # ((c1 == c2) and (c3 == c4)) or ((c1 != c2) and (c3 != c4))
+        formula_expr = Or(
+            And(Equal(c1, c2), Equal(c3, c4)),
+            And(~Equal(c1, c2), ~Equal(c3, c4))
+        )
+        return formula_expr if y else ~formula_expr
 
 DATASETS = {
     "cnf": FileCNFDataset,
     "random": RandomCNFDataset,
     "xor": XorDataset,
-    "configurable_xor": ConfigurableXOR
+    "configurable_xor": ConfigurableXOR,
+    "CCF" : ConfigurableCustomFormula
 }
 
 

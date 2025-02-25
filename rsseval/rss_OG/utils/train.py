@@ -54,7 +54,7 @@ def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_
         filename (str, opzionale): Se non specificato, il file sarà "nocsv_log_concept_{method}_score.csv".
     """
     if filename is None:
-        filename = f"prova_CC_log_concept_{method}_score.csv"
+        filename = f"prova_nuovo_main_{method}_score.csv"
     file_exists = os.path.exists(filename)
     with open(filename, "a", newline="") as csvfile:
         writer = csv.writer(csvfile)

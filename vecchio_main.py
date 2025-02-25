@@ -1,3 +1,5 @@
+break
+
 # This is the main module
 # It provides an overview of the program purpose and functionality.
 
@@ -181,7 +183,7 @@ def main(args):
         if hasattr(args, "step"):
             # Per il run corrente, determina il CSV e il numero massimo di step disponibili
             run_number = args.run
-            csv_file = f"/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/rq3_output_selection_order{run_number}.csv"
+            csv_file = f"/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/totale_samu{run_number}.csv"
             if not os.path.exists(csv_file):
                 raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
             with open(csv_file, newline='') as csvfile:
@@ -246,6 +248,191 @@ def main(args):
             loss = model.get_loss(args)
             model.start_optim(args)
             model.to(model.device)
+            setproctitle.setproctitle(
+                "{}_{}_{}".format(
+                    args.model,
+                    args.buffer_size if "buffer_size" in args else 0,
+                    args.dataset,
+                )
+            )
+            print("    Chosen device:", model.device)
+            if args.preprocess:
+                preprocess(model, dataset, args)
+                print("\n ### Closing ###")
+                quit()
+            if args.probe:
+                probe(model, dataset, args)
+            elif args.posthoc:
+                test(model, dataset, args)
+            else:
+                train(model, dataset, loss, args)
+                save_model(model, args)
+    else:
+        tune(args)
+
+    print("\n ### Closing ###")
+    """Main function. Provides functionalities for training, testing and active learning.
+    
+    Args:
+        args: parsed command line arguments.
+    
+    Returns:
+        None
+    """
+    if hasattr(args, "step"):
+        # Per il run corrente, determina il CSV e il numero massimo di step disponibili
+        run_number = args.run
+        csv_file = f"/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/totale_samu{run_number}.csv"
+        if not os.path.exists(csv_file):
+            raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
+        with open(csv_file, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            rows = list(reader)
+        available_steps = len(rows)
+        # Se l'argomento step supera gli step disponibili nel CSV,
+        # useremo available_steps come limite per questo run.
+        if args.step > available_steps:
+            print(f"Requested step {args.step} exceeds available steps in CSV ({available_steps}).")
+            print(f"For run {args.run} we will use max_step = {available_steps}.")
+            max_step = available_steps
+        else:
+            max_step = args.step
+
+        for current in range(1, max_step + 1):
+            print(f"\n=== Starting training for cumulative step {current} (run {args.run}) ===")
+            # Imposta il campo current_step da usare nel filtraggio (lo userà filtrate in XOR)
+            args.current_step = current
+
+            # Reinizializza dataset, modello, loss, ottimizzatore per ogni iterazione
+            dataset = get_dataset(args)
+            encoder, decoder = dataset.get_backbone()
+            n_images, c_split = dataset.get_split()
+            model = get_model(args, encoder, decoder, n_images, c_split)
+            loss = model.get_loss(args)
+            model.start_optim(args)
+            model.to(model.device)  # Assicura che tutti i parametri del modello siano sul device corretto
+
+            # Imposta il job name includendo lo step corrente
+            setproctitle.setproctitle(
+                "{}_{}_{}_step{}".format(
+                    args.model,
+                    args.buffer_size if "buffer_size" in args else 0,
+                    args.dataset,
+                    current
+                )
+            )
+            print("    Chosen device:", model.device)
+
+            if args.preprocess:
+                preprocess(model, dataset, args)
+                print("\n ### Closing ###")
+                quit()
+
+            if args.probe:
+                probe(model, dataset, args)
+            elif args.posthoc:
+                test(model, dataset, args)  # test the model if post-hoc is passed
+            else:
+                train(model, dataset, loss, args)  # train the model otherwise
+                # Salva il modello includendo lo step nel filename (per non sovrascrivere)
+                save_model(model, args)
+            print(f"\n=== Finished training for cumulative step {current} (run {args.run}) ===\n")
+        else:
+            # Se l'argomento --step non è presente, esegui il training normalmente
+            dataset = get_dataset(args)
+            encoder, decoder = dataset.get_backbone()
+            n_images, c_split = dataset.get_split()
+            model = get_model(args, encoder, decoder, n_images, c_split)
+            loss = model.get_loss(args)
+            model.start_optim(args)
+            setproctitle.setproctitle(
+                "{}_{}_{}".format(
+                    args.model,
+                    args.buffer_size if "buffer_size" in args else 0,
+                    args.dataset,
+                )
+            )
+            print("    Chosen device:", model.device)
+            if args.preprocess:
+                preprocess(model, dataset, args)
+                print("\n ### Closing ###")
+                quit()
+            if args.probe:
+                probe(model, dataset, args)
+            elif args.posthoc:
+                test(model, dataset, args)
+            else:
+                train(model, dataset, loss, args)
+                save_model(model, args)
+    else:
+        tune(args)
+
+    print("\n ### Closing ###")
+    """Main function. Provides functionalities for training, testing and active learning.
+    
+    Args:
+        args: parsed command line arguments.
+    
+    Returns:
+        None
+    """
+    if not args.tuning:
+        # Se l'argomento --step è presente, esegui training per ogni step cumulativo
+        if hasattr(args, "step"):
+            # Per il run corrente, determina il CSV e il numero massimo di step disponibili
+            run_number = args.run
+            csv_file = f"/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/totale_samu{run_number}.csv"
+            if not os.path.exists(csv_file):
+                raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
+            with open(csv_file, newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                rows = list(reader)
+            available_steps = len(rows)
+            # Se l'argomento step supera gli step disponibili, usa available_steps per questa run
+            if args.step > available_steps:
+                print(f"Requested step {args.step} exceeds available steps in CSV ({available_steps}).")
+                print(f"For run {args.run} we will use max_step = {available_steps}.")
+                max_step = available_steps
+            else:
+                max_step = args.step
+
+            for current in range(1, max_step + 1):
+                print(f"\n=== Starting training for cumulative step {current} (run {args.run}) ===")
+                args.current_step = current  # questo viene usato da filtrate() in XOR
+
+                # Imposta il job name includendo lo step corrente
+                setproctitle.setproctitle(
+                    "{}_{}_{}_step{}".format(
+                        args.model,
+                        args.buffer_size if "buffer_size" in args else 0,
+                        args.dataset,
+                        current
+                    )
+                )
+                print("    Chosen device:", model.device)
+
+                if args.preprocess:
+                    preprocess(model, dataset, args)
+                    print("\n ### Closing ###")
+                    quit()
+
+                if args.probe:
+                    probe(model, dataset, args)
+                elif args.posthoc:
+                    test(model, dataset, args)  # test the model if post-hoc is passed
+                else:
+                    train(model, dataset, loss, args)  # train the model otherwise
+                    # Salva il modello includendo lo step nel filename (per non sovrascrivere)
+                    save_model(model, args)
+                print(f"\n=== Finished training for cumulative step {current} ===\n")
+        else:
+            # Se l'argomento --step non è presente, esegui il training normalmente
+            dataset = get_dataset(args)
+            encoder, decoder = dataset.get_backbone()
+            n_images, c_split = dataset.get_split()
+            model = get_model(args, encoder, decoder, n_images, c_split)
+            loss = model.get_loss(args)
+            model.start_optim(args)
             setproctitle.setproctitle(
                 "{}_{}_{}".format(
                     args.model,
