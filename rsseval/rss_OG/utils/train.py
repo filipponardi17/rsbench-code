@@ -35,11 +35,11 @@ import os
 import csv
 
 
-def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_c: float, method: str, filename: str = None):
+def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_c: float, concept_collapse: float, method: str, filename: str = None):
     """
     Logga i punteggi dei concetti e delle etichette per uno specifico step in un unico file CSV.
     La prima riga contiene l'intestazione:
-        ["Step", "Yac", "Yf1", "C_Acc", "Concept_F1", "Entropy H(C)"]
+        ["Step", "Labels_Accuracy", "Labels_F1", "Concept_Accuracy", "Concept_F1", "Entropy H(C)", "Concept Collapse"]
     Ogni riga successiva contiene il numero di step e i valori dei punteggi ottenuti.
     
     Args:
@@ -49,18 +49,18 @@ def log_concept_f1(step: int, yac: float, yf1: float, cac: float, cf1: float, h_
         cac (float): Accuracy dei concetti.
         cf1 (float): F1 score dei concetti.
         h_c (float): Entropy H(C).
+        concept_collapse (float): Il valore di conceptCollapse (es. 1 - compute_coverage(confusion_matrix)).
         method (str): Il metodo usato ("greedy" o "random").
-        filename (str, opzionale): Se non specificato, il file sarà "log_concept_{method}_score.csv".
+        filename (str, opzionale): Se non specificato, il file sarà "nocsv_log_concept_{method}_score.csv".
     """
     if filename is None:
-        filename = f"rq3_log_concept_{method}_score.csv"
+        filename = f"prova_CC_log_concept_{method}_score.csv"
     file_exists = os.path.exists(filename)
     with open(filename, "a", newline="") as csvfile:
         writer = csv.writer(csvfile)
         if not file_exists:
-            writer.writerow(["Step", "Labels_Accuracy", "Labels_F1", "Concept_Accuracy", "Concept_F1", "Entropy H(C)"])
-        writer.writerow([f"step{step}", yac, yf1, cac, cf1, h_c])
-
+            writer.writerow(["Step", "Labels_Accuracy", "Labels_F1", "Concept_Accuracy", "Concept_F1", "Entropy H(C)", "Concept Collapse"])
+        writer.writerow([f"step{step}", yac, yf1, cac, cf1, h_c, concept_collapse])
 def convert_to_categories(elements):
     # Convert vector of 0s and 1s to a single binary representation along the first dimension
     binary_rep = np.apply_along_axis(
@@ -572,12 +572,21 @@ def train(model: MnistDPL, dataset: BaseDataset, _loss: ADDMNIST_DPL, args):
             yac, yf1 = evaluate_mix(y_true, y_pred)
             cac, cf1 = evaluate_mix(c_true, c_pred)
             h_c = mean_entropy(p_cs_all, model.n_facts)
+            default_cf = plot_confusion_matrix(
+            c_true,
+            c_pred,
+            labels=dataset.get_concept_labels(),
+            title="Concepts",
+            save_path=f"concepts_{args.dataset}_{args.model}_lr_{args.lr}_default.png"
+            )
+            concept_collapse = 1 - compute_coverage(default_cf)
+
 
             fprint(f"Concepts:\n    ACC: {cac}, F1: {cf1}")
             fprint(f"Labels:\n      ACC: {yac}, F1: {yf1}")
             fprint(f"Entropy:\n     H(C): {h_c}")
             # Logga tutti i valori nel file CSV
-            log_concept_f1(args.current_step, yac, yf1, cac, cf1, h_c, args.method)
+            log_concept_f1(args.current_step, yac, yf1, cac, cf1, h_c,concept_collapse, args.method)
 
         if args.task == "boia":
             y_labels = ["stop", "forward", "left", "right"]

@@ -48,7 +48,7 @@ class MNLOGIC(BaseDataset):
 
         # ======================================
         # Filtraggio del train 
-        #self.filtrate()
+        self.filtrate()
         # ======================================
 
         # import numpy as np
@@ -127,9 +127,12 @@ class MNLOGIC(BaseDataset):
         if not hasattr(self.args, "run"):
             raise ValueError("Argument 'run' not found in args. Please provide --run when running the experiment.")
 
+        print("current step", self.args.current_step)
+
         # Costruisci il percorso del CSV in base al run corrente
         run_number = self.args.run
         csv_file = f"/home/filippo.nardi/rsbench-code/rsseval/rss_OG/csv/rq3_output_selection_order{run_number}.csv"
+        print("CSV FILE", csv_file)
 
         if not os.path.exists(csv_file):
             raise FileNotFoundError(f"CSV file '{csv_file}' not found.")
@@ -141,10 +144,18 @@ class MNLOGIC(BaseDataset):
         with open(csv_file, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             rows = list(reader)
+            # Se l'argomento current_step supera il numero di righe nel CSV, usa l'ultimo step disponibile
             if self.args.current_step > len(rows):
-                raise ValueError(f"Requested current_step {self.args.current_step} exceeds the number of rows in the CSV ({len(rows)}).")
+                print(f"Requested current_step {self.args.current_step} exceeds the number of rows in the CSV ({len(rows)}). Using last step {len(rows)} instead.")
+                current_step = len(rows)
+            else:
+                current_step = self.args.current_step
+
+            # Aggiorna l'attributo current_step per loggare il valore effettivamente usato
+            self.args.current_step = current_step
+
             # Elaborazione cumulativa dei pattern fino allo step corrente
-            for i in range(self.args.current_step):
+            for i in range(current_step):
                 row = rows[i]
                 patterns_str = row[column_to_use]
                 if patterns_str.strip() != "":
@@ -155,7 +166,7 @@ class MNLOGIC(BaseDataset):
                             # Converte la stringa in lista di interi, es. "0,0,0,0" -> [0, 0, 0, 0]
                             pattern_int = [int(x.strip()) for x in pattern.split(",")]
                             cumulative_patterns.append(pattern_int)
-        print(f"Cumulative patterns up to step {self.args.current_step} using column '{column_to_use}': {cumulative_patterns}")
+        print(f"Cumulative patterns up to step {current_step} using column '{column_to_use}': {cumulative_patterns}")
 
         # Filtra il dataset_train mantenendo solo i sample per cui il vettore dei concetti è presente in cumulative_patterns
         keep_mask = np.array([
@@ -166,6 +177,7 @@ class MNLOGIC(BaseDataset):
         self.dataset_train.concepts = self.dataset_train.concepts[keep_mask]
         self.dataset_train.list_images = np.array(self.dataset_train.list_images, dtype=object)[keep_mask].tolist()
 
+        # Nota: la logica per old_size potrebbe essere rivista; qui viene mantenuta quella originaria
         old_size = len(self.dataset_train.labels) + (len(self.dataset_train.labels) - np.sum(keep_mask))
         new_size = len(self.dataset_train.labels)
         print(f"Filtrate train set: retained {new_size} samples out of {old_size} total.")
